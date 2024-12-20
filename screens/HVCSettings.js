@@ -1,22 +1,94 @@
-import React from 'react';
-import { View, Button, StyleSheet, Text, Switch, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import React, { useState } from 'react';
+import { View, Button, StyleSheet, Text, Switch, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
-export default function HVCSettings() {
+const resolutions = [
+  { value: '3840x2160', label: '3840 x 2160' },
+  { value: '1920x1080', label: '1920 x 1080' },
+  { value: '1280x720', label: '1280 x 720' },
+  { value: '720x480', label: '720 x 480' },
+  { value: '640x480', label: '640 x 480' },
+  { value: '352x288', label: '352 x 288' },
+  { value: '320x240', label: '320 x 240' },
+  { value: '176x144', label: '176 x 144' },
+];
 
-  const HVCSettings = () => {
-    const [recordingDuration, setRecordingDuration] = useState(true);
-    const [showNotificationBarIcon, setShowNotificationBarIcon] = useState(false);
-    const [showPopupNotifications, setShowPopupNotifications] = useState(true);
-    const [lowBatteryStopRecording, setLowBatteryStopRecording] = useState(true);
-    const [isRecordingDurationPopupVisible, setIsRecordingDurationPopupVisible] = useState(false);
+export default function HVCSettings({ navigation }) {
+  
+  const [recordingDuration, setRecordingDuration] = useState(true);
+  const [showNotificationBarIcon, setShowNotificationBarIcon] = useState(false);
+  const [showPopupNotifications, setShowPopupNotifications] = useState(true);
+  const [lowBatteryStopRecording, setLowBatteryStopRecording] = useState(true);
+  const [isRecordingDurationPopupVisible, setIsRecordingDurationPopupVisible] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState('30 seconds'); // Default duration
+  const [isCameraSelectionVisible, setIsCameraSelectionVisible] = useState(false);
+  const [selectedCamera, setSelectedCamera] = useState('Back camera');
+  const [isRecordingQualityPopupVisible, setIsRecordingQualityPopupVisible] = useState(false);
+  const [selectedResolution, setSelectedResolution] = useState(resolutions[5]); // Default to 352x288
+
+  const handleRecordingListPress = () => {
+    // Navigate to VideoRecordingList using the provided navigation object
+    navigation.navigate('Video List'); 
+  };
+
+  
+
+  const durations = [
+    'Unlimited (records until stopped manually)',
+    '30 seconds',    '1 minute',    '3 minutes',    '5 minutes',
+    '10 minutes',    '15 minutes',    '30 minutes',
+    '60 minutes',    '90 minutes',
+  ];
+
     
-  }
+
+  const usecam = [
+    'Front Camera',
+    'Back camera',   
+  ];
+
+  
+
+  // Recording Duration
+  const handleRecordingDurationPress = () => {
+    setIsRecordingDurationPopupVisible(true); 
+  };
+
+  const handleDurationSelect = (duration) => {
+    setSelectedDuration(duration);
+  };
+
+  const handleCancelPress = () => {
+    setIsRecordingDurationPopupVisible(false); 
+    setIsCamToUse(false); 
+  };
+
+  // Cmera to use
+  const handleCameraSelectionPress = () => {
+    setIsCameraSelectionVisible(true);
+  };
+
+  const handleCameraSelect = (camera) => {
+    setSelectedCamera(camera);
+    //setIsCameraSelectionVisible(false);
+  };
+
+  // Recording Quality
+  const handleRecordingQualityPress = () => {
+    setIsRecordingQualityPopupVisible(true);
+  };
+
+  const handleResolutionSelect = (resolution) => {
+    setSelectedResolution(resolution);
+  };  
 
   return (
     <ScrollView style={styles.container}>
+      
+      {/* Recording List */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recordings</Text>
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity style={styles.option} onPress={handleRecordingListPress} >
           <View style={styles.optionIconContainer}>
               <Text style={styles.optionIcon}>☰</Text>
           </View>
@@ -30,7 +102,8 @@ export default function HVCSettings() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basic</Text>
 
-        <TouchableOpacity onPress={() => setIsRecordingDurationPopupVisible(true)} >
+        {/* Recoding Duration */}
+        <TouchableOpacity onPress={handleRecordingDurationPress} >
           <View style={styles.option}>
             <View style={styles.optionIconContainer}>
               <Text style={styles.optionIcon}>⏰</Text>
@@ -45,9 +118,37 @@ export default function HVCSettings() {
           
         </TouchableOpacity>
         
-        
+        <Modal 
+          visible={isRecordingDurationPopupVisible} 
+          animationType="slide" 
+          transparent={true}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Recording Duration</Text>
+              <ScrollView>
+                {durations.map((duration) => (
+                  <TouchableOpacity 
+                    key={duration} 
+                    style={styles.durationOption} 
+                    onPress={() => handleDurationSelect(duration)}
+                  >
+                    <View style={styles.radioContainer}>
+                      {selectedDuration === duration && <View style={styles.radioIndicator} />}
+                    </View>
+                    <Text style={styles.durationText}>{duration}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity style={styles.cancelButton} onPress={handleCancelPress}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
-        <TouchableOpacity >
+        {/* Camera To Use */}
+        <TouchableOpacity onPress={handleCameraSelectionPress}>
           <View style={styles.option}>
             <View style={styles.optionIconContainer}>
               <Text style={styles.optionIcon}>📷</Text>
@@ -60,7 +161,43 @@ export default function HVCSettings() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity >
+        <Modal
+          visible={isCameraSelectionVisible}
+          animationType="slide"
+          transparent={true}
+          >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Camera to use</Text>
+              <View style={styles.cameraOptionsContainer}>
+                <TouchableOpacity
+                  style={[styles.cameraOption, selectedCamera === 'Back camera' && styles.selectedCamera]}
+                  onPress={() => handleCameraSelect('Back camera')}
+                >
+                  <View style={styles.radioContainer}>
+                    {selectedCamera === 'Back camera' && <View style={styles.radioIndicator} />}
+                  </View>
+                  <Text style={styles.cameraOptionText}>Back camera</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cameraOption, selectedCamera === 'Front camera' && styles.selectedCamera]}
+                  onPress={() => handleCameraSelect('Front camera')}
+                >
+                  <View style={styles.radioContainer}>
+                    {selectedCamera === 'Front camera' && <View style={styles.radioIndicator} />}
+                  </View>
+                  <Text style={styles.cameraOptionText}>Front camera</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setIsCameraSelectionVisible(false)}>
+                <Text style={styles.cancelButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        
+        {/* Recording Quality */}
+        <TouchableOpacity onPress={handleRecordingQualityPress}>
           <View style={styles.option}>
             <View style={styles.optionIconContainer}>
               <Text style={styles.optionIcon}>📹</Text>
@@ -73,31 +210,53 @@ export default function HVCSettings() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity >
-          <View style={styles.option}>
-            <View style={styles.optionIconContainer}>
-              <Text style={styles.optionIcon}>🔔</Text>
+        <Modal visible={isRecordingQualityPopupVisible} animationType="slide" transparent={true} >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Recording quality</Text>
+              <ScrollView>
+                {resolutions.map((resolution) => (
+                  <TouchableOpacity key={resolution.value}
+                  style={[styles.resolutionOption, selectedResolution.value === resolution.value && styles.selectedResolution]}
+                  onPress={() => handleResolutionSelect(resolution)} >
+                    <View style={styles.radioContainer}>
+                      {selectedResolution.value === resolution.value && <View style={styles.radioIndicator} />}
+                    </View>
+                    <Text style={styles.resolutionText}>{resolution.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setIsRecordingQualityPopupVisible(false)}>
+                <Text style={styles.cancelButtonText}>CANCEL</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.optionDetailsContainer}>
-              <Text style={styles.optionText}>Hide notification bar icon</Text>
-              <Text style={styles.optionDescription}>Do not show a notification bar icon in the notification bar</Text>
-            </View>
-            {/* <Switch value={showNotificationBarIcon} onValueChange={setShowNotificationBarIcon} /> */}
           </View>
-        </TouchableOpacity>
+        </Modal>
 
-        <TouchableOpacity >
-          <View style={styles.option}>
-            <View style={styles.optionIconContainer}>
-              <Text style={styles.optionIcon}>💬</Text>
-            </View>
-            <View style={styles.optionDetailsContainer}>
-              <Text style={styles.optionText}>Show popup notifications</Text>
-              <Text style={styles.optionDescription}>Show short popup notifications on recording start and stop</Text>
-            </View>
-            {/* <Switch value={showPopupNotifications} onValueChange={setShowPopupNotifications} /> */}
+        {/* Hide Notification Bar */}
+        <View style={styles.option}>
+          <View style={styles.optionIconContainer}>
+            <Text style={styles.optionIcon}>🔔</Text>
           </View>
-        </TouchableOpacity>
+          <View style={styles.optionDetailsContainer}>
+            <Text style={styles.optionText}>Hide notification bar icon</Text>
+            <Text style={styles.optionDescription}>Do not show a notification bar icon in the notification bar</Text>
+          </View>
+          <Switch value={showNotificationBarIcon} onValueChange={setShowNotificationBarIcon} />
+        </View>
+        
+        {/* Show Popup Notification */}
+        <View style={styles.option}>
+          <View style={styles.optionIconContainer}>
+            <Text style={styles.optionIcon}>💬</Text>
+          </View>
+          <View style={styles.optionDetailsContainer}>
+            <Text style={styles.optionText}>Show popup notifications</Text>
+            <Text style={styles.optionDescription}>Show short popup notifications on recording start and stop</Text>
+          </View>
+          <Switch value={showPopupNotifications} onValueChange={setShowPopupNotifications} />
+        </View>
+        
 
       </View>
 
@@ -123,24 +282,27 @@ export default function HVCSettings() {
             <Text style={styles.optionText}>Low battery</Text>
             <Text style={styles.optionDescription}>Stop recording on low battery level to prevent video corruption</Text>
           </View>
-          {/* <Switch value={lowBatteryStopRecording} onValueChange={setLowBatteryStopRecording} /> */}
+          <Switch value={lowBatteryStopRecording} onValueChange={setLowBatteryStopRecording} />
         </View>
 
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Experimental</Text>
-        <View style={styles.option}>
-          <View style={styles.optionIconContainer}>
-            <Text style={styles.optionIcon}>📁</Text>
+      
+      {/* Recordings directory */}
+      <TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Experimental</Text>
+          <View style={styles.option}>
+            <View style={styles.optionIconContainer}>
+              <Text style={styles.optionIcon}>📁</Text>
+            </View>
+            <View style={styles.optionDetailsContainer}>
+              <Text style={styles.optionText}>Recordings directory</Text>
+              <Text style={styles.optionDescription}>Videos directory name and path</Text>
+            </View>
+            {/* Add your desired UI element for directory selection or editing */}
           </View>
-          <View style={styles.optionDetailsContainer}>
-            <Text style={styles.optionText}>Recordings directory</Text>
-            <Text style={styles.optionDescription}>Videos directory name and path</Text>
-          </View>
-          {/* Add your desired UI element for directory selection or editing */}
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
@@ -195,14 +357,11 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between', // Align items horizontally
     padding: 10,
     borderRadius: 5,
     backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    // ... other styles for option ...
   },
   optionIconContainer: {
     width: 40,
@@ -223,4 +382,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'gray',
   },
+  radioContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'red',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  durationOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc', 
+  },
+  durationText: {
+    fontSize: 16,
+  },
+  cancelButton: {
+    backgroundColor: '#ccc',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: 'white',
+    textAlign: 'center',
+  },
+  selectedResolution: {
+    backgroundColor: '#f0f0f0',
+  },
+  resolutionText: {
+    fontSize: 16,
+  },
+
 });
